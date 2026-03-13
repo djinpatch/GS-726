@@ -13,7 +13,7 @@ print("device:", device)
 # ----------------------------
 # grid
 # ----------------------------
-NR, NZ = 40, 40
+NR, NZ = 100, 100
 
 R_vals_np = np.linspace(1.0, 2.0, NR)
 Z_vals_np = np.linspace(-0.5, 0.5, NZ)
@@ -108,24 +108,56 @@ def apply_greens(src, G4=G4, dR=dR, dZ=dZ, device=device, dtype=torch.float32):
     return phi
 
 
+def apply_greens_einsum(src, G4, dR, dZ):
+    return torch.einsum("ijkl,kl->ij", G4, src) * dR * dZ
+
+def apply_greens_matmul(src, G4, dR, dZ):
+    NR, NZ = src.shape
+    Gmat = G4.reshape(NR * NZ, NR * NZ)
+    srcvec = src.reshape(NR * NZ)
+    return (Gmat @ srcvec).reshape(NR, NZ) * dR * dZ
+
 # ----------------------------
 # example 1: Gaussian source
 # ----------------------------
 src1 = torch.exp(-(((RR - 1.5) / 0.15) ** 2 + (ZZ / 0.12) ** 2))
-psi1 = apply_greens(src1)
-
-print("src1 shape:", src1.shape)
-print("psi1 shape:", psi1.shape)
-print("psi1 device:", psi1.device)
+# psi1 = apply_greens(src1)
 
 
-import matplotlib.pyplot as plt
+import time
 
-plt.figure(figsize=(6, 5))
-plt.contour(R_vals_np, Z_vals_np, psi1.detach().cpu().numpy().T, levels=30)
-plt.xlabel("R")
-plt.ylabel("Z")
-plt.title(r"$\psi(R,Z)$")
-plt.tight_layout()
-plt.show()
+# warmup
+_ = apply_greens_einsum(src1, G4, dR, dZ)
+_ = apply_greens_matmul(src1, G4, dR, dZ)
+if device.type == "mps":
+    torch.mps.synchronize()
+
+t0 = time.perf_counter()
+_ = apply_greens_einsum(src1, G4, dR, dZ)
+if device.type == "mps":
+    torch.mps.synchronize()
+t1 = time.perf_counter()
+
+t2 = time.perf_counter()
+_ = apply_greens_matmul(src1, G4, dR, dZ)
+if device.type == "mps":
+    torch.mps.synchronize()
+t3 = time.perf_counter()
+
+print("einsum:", t1 - t0)
+print("matmul:", t3 - t2)
+# print("src1 shape:", src1.shape)
+# print("psi1 shape:", psi1.shape)
+# print("psi1 device:", psi1.device)
+
+
+# import matplotlib.pyplot as plt
+
+# plt.figure(figsize=(6, 5))
+# plt.contour(R_vals_np, Z_vals_np, psi1.detach().cpu().numpy().T, levels=30)
+# plt.xlabel("R")
+# plt.ylabel("Z")
+# plt.title(r"$\psi(R,Z)$")
+# plt.tight_layout()
+# plt.show()
 
