@@ -197,7 +197,7 @@ def apply_greens(src, G4, dR, dZ, device, dtype=torch.float32):
         )
 
     psi = torch.einsum("ijkl,kl->ij", G4, src) * dR * dZ # torch tensor defined on matrix [NR, NZ]
-    psi = psi.T
+
     return psi
 
 
