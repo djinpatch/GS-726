@@ -117,5 +117,107 @@ def initial_psi_plasma(R, Z, psi_coils, R0, a, psi0):
 
     return psi_plasma
 
-def prof(a0, psi, nu):
-    return a0 * (1 - psi**2)**nu
+
+pi = np.pi
+const = 1.0 / (2.0 * pi)
+
+def denom(R, Z, Rp, Zp):
+    return (R + Rp)**2 + (Z - Zp)**2
+
+def norm2(R, Z, Rp, Zp):
+    return (R - Rp)**2 + (Z - Zp)**2
+
+def ksquare(R, Z, Rp, Zp):
+    return 4.0 * R * Rp / denom(R, Z, Rp, Zp)
+
+# def G(R, Z, Rp, Zp):
+#     '''
+#     '''
+#     ksq = ksquare(R, Z, Rp, Zp)
+#     k = np.sqrt(ksq)
+#     return const * np.sqrt(Rp / R) * 1/k * ( ( 2 - ksq ) * ellipk(ksq) - 2 * ellipe(ksq) )
+
+
+def G_stable(R, Z, Rp, Zp, eps=1e-14, switch=1e-8, diag_eps=None):
+    m = ksquare(R, Z, Rp, Zp)
+
+    if diag_eps is not None:
+        same = norm2(R, Z, Rp, Zp) < diag_eps**2
+        m = np.where(same, 1.0 - eps, m)
+
+    m = np.clip(m, eps, 1.0 - eps)
+
+    K = np.empty_like(m)
+    near1 = (1.0 - m) < switch
+    K[near1] = ellipkm1(1.0 - m[near1])
+    K[~near1] = ellipk(m[~near1])
+
+    E = ellipe(m)
+    k = np.sqrt(m)
+
+    return const * np.sqrt(Rp / R) * (((2.0 - m) * K - 2.0 * E) / k)
+
+
+def build_4D_Greensfunction(R_vals_np, Z_vals_np, device):
+    R4, Z4, Rp4, Zp4 = np.meshgrid(
+        R_vals_np, Z_vals_np, R_vals_np, Z_vals_np, indexing="ij"
+    )
+    dR = R_vals_np[1] - R_vals_np[0]
+    dZ = Z_vals_np[1] - Z_vals_np[0]
+    diag_eps = 0.5 * np.sqrt(dR**2 + dZ**2)
+    G4_np = G_stable(R4, Z4, Rp4, Zp4, diag_eps=diag_eps)
+    G4 = torch.from_numpy(G4_np).to(device=device, dtype=torch.float32) # returns a torch tensor
+    return G4, dR, dZ
+
+def apply_greens(src, G4, dR, dZ, device, dtype=torch.float32):
+    """
+    Apply the Green's function to a 2D source.
+
+    Parameters
+    ----------
+    src : torch.Tensor or np.ndarray
+        Shape (NR, NZ). Source defined on the (Rp, Zp) grid.
+
+    Returns
+    -------
+    psi : torch.Tensor
+        Shape (NR, NZ). Field defined on the (R, Z) grid.
+    """
+    if isinstance(src, np.ndarray):
+        src = torch.from_numpy(src)
+
+    src = src.to(device=device, dtype=dtype)
+
+    if src.ndim != 2:
+        raise ValueError(f"src must be 2D, got shape {tuple(src.shape)}")
+
+    if src.shape != G4.shape[2:]:
+        raise ValueError(
+            f"src shape must be {G4.shape[2:]}, got {tuple(src.shape)}"
+        )
+
+    psi = torch.einsum("ijkl,kl->ij", G4, src) * dR * dZ # torch tensor defined on matrix [NR, NZ]
+    psi = psi.T
+    return psi
+
+
+def prof(a0, psi, nu=2):
+    deltapsi = psi.max() - psi.min()
+    psihat = (psi - psi.min()) / deltapsi
+    return a0 * (1 - psihat**2)**nu
+
+
+def profprime(a0, psi, nu=2):
+    deltapsi = psi.max() - psi.min()
+    psihat = (psi - psi.min()) / deltapsi
+    profile = prof(a0, psi, nu)
+    return -2 * nu * profile * psihat / (1 - psihat**2) / deltapsi
+
+
+def get_src(p0, F0, Rp, psi, nu=2):
+    pprime = profprime(p0, psi, nu=nu)
+    F = prof(F0, psi, nu=nu)
+    Fprime = profprime(F0, psi, nu=nu)
+    src = Rp * pprime + F*Fprime/Rp
+
+    return src

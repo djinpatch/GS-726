@@ -20,6 +20,19 @@ if run_plasma_guess_example:
 
 
 
-
 else:
     print('No Flag Specified for Type of Run')
+
+
+
+R_vals_torch = torch.from_numpy(R_vals).to(device=device, dtype=torch.float32)
+Z_vals_torch = torch.from_numpy(Z_vals).to(device=device, dtype=torch.float32)
+R, Z = torch.meshgrid(R_vals_torch, Z_vals_torch, indexing="xy")
+
+G4, dR, dZ = build_4D_Greensfunction(R_vals, Z_vals, device=device)
+src = get_src(p0, F0, R, psi_target)
+
+
+for i in iterationloop:
+    psi = apply_greens(src, G4, dR, dZ, device=device)
+    src = get_src(p0, F0, R, psi)

@@ -1,6 +1,9 @@
 import numpy as np
+import pdb
+import torch
+device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 import matplotlib.pyplot as plt
-from scipy.special import ellipk, ellipe
+from scipy.special import ellipk, ellipe, ellipkm1
 
 # constants 
 mu0 = 4 * np.pi * 1e-7
@@ -34,6 +37,8 @@ RR, ZZ = np.meshgrid(R_vals, Z_vals, indexing="xy")
 ## This sets the plasma center and radius
 R0 = 1.5
 a = .2
+p0 = 3.
+F0 = 3.
 
 
 # ------------------------------------------------------------
