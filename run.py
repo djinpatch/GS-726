@@ -6,17 +6,17 @@ if run_plasma_guess_example:
 
     print('Running plasma guess example...')
     psi_target = np.min(psi_on_circle(R0,a,Coils))
-    psi_coils_0 = multi_coil_fields(RR, ZZ, Coils)
+    psi_coils = multi_coil_fields(RR, ZZ, Coils)
     print('Calculating psi from coils...')
-    psi_plasma_0 = initial_psi_plasma(RR, ZZ,psi_coils_0, R0, a, psi_target)
+    psi_plasma_0 = initial_psi_plasma(RR, ZZ,psi_coils, R0, a, psi_target)
     print('Generating guess...')
    
 
-    plot_psi_total_contours(
-        RR,
-        ZZ,
-        psi_coils_0,
-        psi_plasma_0*1)
+    # plot_psi_total_contours(
+    #     RR,
+    #     ZZ,
+    #     psi_coils_0,
+    #     psi_plasma_0*1)
 
 
 
@@ -24,13 +24,13 @@ else:
     print('No Flag Specified for Type of Run')
 
 Rij, Zij = np.meshgrid(R_vals, Z_vals, indexing='ij')
-Gblocks = precompile_blocks(Rij, Zij)
-psi0 = (psi_plasma_0 + psi_coils_0).T
-src = get_src(p0, F0, Rij, psi0)
+Gblocks = precompile_blocks(R_vals, Z_vals)
+psi0 = (psi_plasma_0 + psi_coils).T
+
+src = get_src(p0, F0, Rij, psi0, psi_coils.T)
 for j in range(Niter):
-    psi = apply_Gfunc_blocks(src, R_vals, Z_vals, Gblocks, blockR=25, blockZ=25) + psi_coils_0.T
-    src = get_src(p0, F0, Rij, psi)
-    pdb.set_trace()
+    psi = apply_Gfunc_blocks(src, R_vals, Z_vals, Gblocks, blockR=25, blockZ=25) + psi_coils.T
+    src = get_src(p0, F0, Rij, psi, psi_coils.T)
 
 
 

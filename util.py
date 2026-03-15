@@ -1,3 +1,5 @@
+from math import nan
+
 from inputs import *
 
 
@@ -85,22 +87,29 @@ def apply_Gfunc_blocks(src, R, Z, Gblocks, blockR=25, blockZ=25):
 
 ####
 
-def prof(a0, psi, nu=2):
-    deltapsi = psi.max() - psi.min()
+def prof(a0, psi, psi_coils, nu=2):
+    psimask = psi != psi_coils
+    psivalid = psi[psimask]
+    deltapsi = psivalid.max() - psivalid.min()
     psihat = (psi - psi.min()) / deltapsi
-    return a0 * (1 - psihat**2)**nu
+    profile = a0 * (1 - psihat**2)**nu
+    profile = np.where(psimask, profile, 0.0)
+    return profile
 
 
-def profprime(a0, psi, nu=2):
-    deltapsi = psi.max() - psi.min()
+def profprime(a0, psi, psi_coils, nu=2):
+    psimask = psi != psi_coils
+    psivalid = psi[psimask]
+    deltapsi = psivalid.max() - psivalid.min()
     psihat = (psi - psi.min()) / deltapsi
-    return -2 * psihat * nu * a0 * (1 - psihat**2)**(nu-1) / deltapsi
+    profileprime = -2 * psihat * nu * a0 * (1 - psihat**2)**(nu-1) / deltapsi
+    profileprime = np.where(psimask, profileprime, 0.0)
+    return profileprime
 
-
-def get_src(p0, F0, Rp, psi, nu=2):
-    pprime = profprime(p0, psi, nu=nu)
-    F = prof(F0, psi, nu=nu)
-    Fprime = profprime(F0, psi, nu=nu)
+def get_src(p0, F0, Rp, psi, psi_coils, nu=2):
+    pprime = profprime(p0, psi, psi_coils, nu=nu)
+    F = prof(F0, psi, psi_coils, nu=nu)
+    Fprime = profprime(F0, psi, psi_coils, nu=nu)
     src = Rp * pprime + F*Fprime/Rp
 
     return src
