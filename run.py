@@ -23,7 +23,14 @@ if run_plasma_guess_example:
 else:
     print('No Flag Specified for Type of Run')
 
-
+Rij, Zij = np.meshgrid(R_vals, Z_vals, indexing='ij')
+Gblocks = precompile_blocks(Rij, Zij)
+psi0 = (psi_plasma_0 + psi_coils_0).T
+src = get_src(p0, F0, Rij, psi0)
+for j in range(Niter):
+    psi = apply_Gfunc_blocks(src, R_vals, Z_vals, Gblocks, blockR=25, blockZ=25) + psi_coils_0.T
+    src = get_src(p0, F0, Rij, psi)
+    pdb.set_trace()
 
 
 
