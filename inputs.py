@@ -3,6 +3,7 @@ import pdb
 # import torch
 # device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 import matplotlib.pyplot as plt
+from matplotlib.path import Path
 from scipy.special import ellipk, ellipe, ellipkm1
 
 # constants 

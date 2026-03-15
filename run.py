@@ -25,12 +25,18 @@ else:
 
 Rij, Zij = np.meshgrid(R_vals, Z_vals, indexing='ij')
 Gblocks = precompile_blocks(R_vals, Z_vals)
-psi0 = (psi_plasma_0 + psi_coils).T
+psi = (psi_plasma_0 + psi_coils).T
 
-src = get_src(p0, F0, Rij, psi0, psi_coils.T)
+lcfs = find_lcfs_from_axis(Rij, Zij, psi, axis="min", nlevels=200)
+psimask = make_lcfs_mask(RR, ZZ, lcfs)
+src = get_src(p0, F0, Rij, psi, psimask)
+
 for j in range(Niter):
     psi = apply_Gfunc_blocks(src, R_vals, Z_vals, Gblocks, blockR=25, blockZ=25) + psi_coils.T
-    src = get_src(p0, F0, Rij, psi, psi_coils.T)
+
+    lcfs = find_lcfs_from_axis(Rij, Zij, psi, axis="min", nlevels=200)
+    psimask = make_lcfs_mask(RR, ZZ, lcfs)
+    src = get_src(p0, F0, Rij, psi, psimask)
 
 
 
