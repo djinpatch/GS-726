@@ -28,7 +28,7 @@ Coils = [
 # Grid
 ## Make sure this matches coil domain 
 
-NR, NZ = 400, 400
+NR, NZ = 100, 100
 R_vals = np.linspace(1.0, 2.0, NR)
 Z_vals = np.linspace(-0.5, 0.5, NZ)
 RR, ZZ = np.meshgrid(R_vals, Z_vals, indexing="xy")
