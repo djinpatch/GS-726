@@ -165,6 +165,11 @@ def initial_psi_plasma(R, Z, psi_coils, R0, a, psi0):
 
 
 ########################### THANK YOU CHATGPT ##############################
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.path import Path
+
+
 def polygon_area(vertices):
     """
     Compute polygon area using the shoelace formula.
@@ -182,7 +187,7 @@ def polygon_area(vertices):
     return 0.5 * np.abs(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1)))
 
 
-def is_closed_vertices(vertices, tol=1e-8):
+def is_closed_vertices(vertices, tol=1e-6):
     """
     Check whether a contour is closed by comparing first and last vertex.
 
@@ -195,7 +200,9 @@ def is_closed_vertices(vertices, tol=1e-8):
     -------
     closed : bool
     """
-    return np.allclose(vertices[0], vertices[-1], atol=tol, rtol=0)
+    if len(vertices) < 3:
+        return False
+    return np.linalg.norm(vertices[0] - vertices[-1]) < tol
 
 
 def touches_boundary(vertices, Rmin, Rmax, Zmin, Zmax, tol=1e-8):
@@ -277,10 +284,9 @@ def find_magnetic_axis(RR, ZZ, psi, axis="min"):
     }
 
 
-def get_closed_contours_at_level(RR, ZZ, psi, level, tol=1e-8):
+def get_closed_contours_at_level(RR, ZZ, psi, level, tol=1e-6):
     """
-    Extract closed contours at a given psi level that do not touch
-    the computational boundary.
+    Extract closed contours at one psi level that do not touch the boundary.
 
     Parameters
     ----------
@@ -305,11 +311,10 @@ def get_closed_contours_at_level(RR, ZZ, psi, level, tol=1e-8):
 
     contours = []
 
-    # Works across matplotlib versions by accessing all paths from collections
-    for coll in cs.collections:
-        for path in coll.get_paths():
-            vertices = path.vertices
-
+    # For levels=[level], cs.allsegs has length 1, and cs.allsegs[0]
+    # is a list of contour segments, each an (N,2) array of vertices.
+    if len(cs.allsegs) > 0:
+        for vertices in cs.allsegs[0]:
             if len(vertices) < 3:
                 continue
 
@@ -329,7 +334,7 @@ def get_closed_contours_at_level(RR, ZZ, psi, level, tol=1e-8):
     return contours
 
 
-def find_lcfs_from_axis(RR, ZZ, psi, axis="min", nlevels=200, tol=1e-8):
+def find_lcfs_from_axis(RR, ZZ, psi, axis="min", nlevels=200, tol=1e-6):
     """
     Find the LCFS as the outermost closed contour that encloses
     the magnetic axis and does not touch the boundary.
