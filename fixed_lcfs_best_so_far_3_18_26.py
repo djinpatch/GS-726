@@ -765,8 +765,8 @@ Z0 = 0.0
 
 
 
-p0 =  10 # 300.0 / 100
-F0 = .18 # .18
+p0 = 1 # 480
+F0 =  .1 #.5e6 * mu0 / (2*np.pi)
 nu = 2
 
 src_scale = 1 ### REMOVE when iteration works, non physical, numerical only 
@@ -777,7 +777,7 @@ Niter = 400
 axis_type = "min"
 
 # ring of current filaments in the RZ plane
-Ncoils = 40
+Ncoils = 60
 coil_radius = 0.52
 I_total = .5e6 
 Icoil = I_total/Ncoils
@@ -827,8 +827,6 @@ lcfs_target = find_lcfs_from_axis(
     tol=1e-6,
 )
 
-
-
 psimask = points_in_polygon(RR, ZZ, lcfs_target["vertices"])
 psi_edge_target = lcfs_target["level"]
 axis_info_init = find_magnetic_axis(RR, ZZ, psi, axis=axis_type, mask=psimask)
@@ -845,7 +843,7 @@ plot_state(
 )
 
 
-FREE = False
+FREE = True
 
 for j in range(Niter):
     psi_old = psi.copy()
@@ -891,7 +889,10 @@ for j in range(Niter):
 
     psi = (1.0 - alpha) * psi_old + alpha * psi_fixedpoint
 
-    if j % 50 == 0 and j != 0:
+    if j % 10 == 0 and j != 0:
+
+        # get new LCFS 
+        
         plot_all_three()
         
 
