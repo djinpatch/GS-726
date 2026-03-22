@@ -717,14 +717,14 @@ nu = 2
 
 src_scale = 1.0
 alpha = 0.1
-Niter = 500
+Niter = 280
 axis_type = "min"
 
 # wall-current boundary control parameters
 Nbc = 128           # number of shell collocation points
 Nwall = 128         # number of fictitious wall filaments
 delta_wall = 0.01  # radius offset for wall-current basis
-wall_reg = 1e-12   # regularization for wall-current solve
+wall_reg = 1e-14   # regularization for wall-current solve
 
 # ---------------- grid ----------------
 RR, ZZ = np.meshgrid(R_vals, Z_vals, indexing="ij")
