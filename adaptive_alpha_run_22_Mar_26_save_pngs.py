@@ -695,12 +695,13 @@ def compute_gs_residual(
 
 
 def plot_all_three(RR, ZZ, psi, psimask, psi_axis, psi_edge, axis_info, coils, p0, F0, nu, j,delta_list):
-    fig, axes = plt.subplots(1, 4, figsize=(18, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
     diag = compute_axisymmetric_fields_and_currents(
         RR, ZZ, psi, psimask, psi_axis, psi_edge, p0, F0, nu=nu
     )
-
+    
+    '''
     if j < 300:
         s = 0
     else:
@@ -713,6 +714,7 @@ def plot_all_three(RR, ZZ, psi, psimask, psi_axis, psi_edge, axis_info, coils, p
     axes[0].set_ylabel(rf'Average \delta \psi')
     axes[0].set_xlabel('Iteration')
     axes[0].set_title('Convergence')
+    '''
 
     plot_state(
         RR,
@@ -722,20 +724,20 @@ def plot_all_three(RR, ZZ, psi, psimask, psi_axis, psi_edge, axis_info, coils, p
         axis_info,
         title=f"$\\psi$ at iteration {j}",
         coils=coils,
-        ax=axes[1],
+        ax=axes[0],
 
     )
 
     plot_rz_scalar(
         RR,
         ZZ,
-        diag["J_phi"],
-        title=rf"$J_\phi$ at iteration {j}",
-        cbar_label=r"$J_\phi$",
+        diag["B_phi"],
+        title=rf"$B_\phi$ at iteration {j}",
+        cbar_label=r"$B_\phi$",
         axis_info=axis_info,
         mask=psimask,
         coils=coils,
-        ax=axes[2],
+        ax=axes[1],
         vmin=-1e9,
         vmax=1e9,
         cmap = 'seismic'
@@ -751,7 +753,7 @@ def plot_all_three(RR, ZZ, psi, psimask, psi_axis, psi_edge, axis_info, coils, p
         axis_info=axis_info,
         mask=psimask,
         coils=coils,
-        ax=axes[3],
+        ax=axes[2],
         logscale=True,
         vmin=1e-8,
         cmap = 'viridis'
@@ -808,7 +810,7 @@ alpha = 0.02
 alpha_min = 0.0005
 alpha_max = 0.05
 
-Niter = 5000
+Niter = 500
 axis_type = "min"
 
 # wall-current boundary control parameters
@@ -987,9 +989,9 @@ plot_state(
 plot_rz_scalar(
     RR,
     ZZ,
-    diag["J_phi"],
-    title=r"$J_\phi$ Final",
-    cbar_label=r"$J_\phi$",
+    diag["B_phi"],
+    title=r"$B_\phi$ Final",
+    cbar_label=r"$B_\phi$",
     axis_info=axis_info,
     mask=psimask,
     coils=coils,
