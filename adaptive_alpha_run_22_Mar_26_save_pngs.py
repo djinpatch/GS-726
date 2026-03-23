@@ -386,15 +386,15 @@ def profprime(a0, psi, psimask, psi_axis, psi_edge, nu=2):
 def get_src(p0, F0, Rp, psi, psimask, psi_axis, psi_edge, nu=2, src_scale=1.0):
     """
     Grad-Shafranov source:
-        src = R p'(psi) + F F'(psi) / R
+        src = mu_0 R p'(psi) + F F'(psi) / R
     using profiles normalized by psi_axis and psi_edge.
     """
     pprime = profprime(p0, psi, psimask, psi_axis, psi_edge, nu=nu)
     F = prof(F0, psi, psimask, psi_axis, psi_edge, nu=nu)
     Fprime = profprime(F0, psi, psimask, psi_axis, psi_edge, nu=nu)
 
-    #src = Rp * pprime + F * Fprime / Rp
-    src = mu0 * (RR**2 * pprime + F * Fprime)
+    src = mu0 * Rp * pprime + F * Fprime / Rp
+    # src = mu0 * (RR**2 * pprime + F * Fprime)
 
     src = src_scale * src
     src = np.where(psimask, src, 0.0)
@@ -667,9 +667,8 @@ def compute_gs_residual(
     F = prof(F0, psi, psimask, psi_axis, psi_edge, nu=nu)
     Fprime = profprime(F0, psi, psimask, psi_axis, psi_edge, nu=nu)
 
-    rhs = src_scale * (RR * pprime + F * Fprime / RR)
-
-    lhs = -(1.0 / (mu0 * RR)) * delta_star_psi
+    lhs = -(1.0 / RR) * delta_star_psi
+    rhs = src_scale * (mu0 * RR * pprime + F * Fprime / RR)
 
     gs_resid = lhs - rhs
     gs_resid = np.where(psimask, gs_resid, np.nan)
@@ -800,7 +799,7 @@ Z0 = 0.0
 a = 0.50
 
 # safer numerical test values first
-p0 = 50.0
+p0 = 480.0
 F0 = 0.1
 nu = 2
 
